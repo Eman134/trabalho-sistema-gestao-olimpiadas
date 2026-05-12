@@ -18,14 +18,12 @@ sistema-gestao-olimpiadas/
 ├── README.md
 ├── docs/
 │   ├── diagrama-de-caso-de-uso.png
-│   ├── diagrama-de-classes.png
-│   ├── diagrama-de-pacotes.png
+│   ├── diagrama-de-classes-e-pacotes.png
 │   ├── diagrama-de-componentes.png
 │   └── diagrama-de-implantacao.png
 └── puml/
     ├── diagrama-de-caso-de-uso.puml
-    ├── diagrama-de-classes.puml
-    ├── diagrama-de-pacotes.puml
+    ├── diagrama-de-classes-e-pacotes.puml
     ├── diagrama-de-componentes.puml
     └── diagrama-de-implantacao.puml
 ```
@@ -137,25 +135,19 @@ sistema-gestao-olimpiadas/
 
 ---
 
-### 2. Diagrama de Classes
+### 2. Diagrama de Classes e Pacotes
 
-<img width="800px" src="https://github.com/eman134/trabalho-sistema-gestao-olimpiadas/blob/main/docs/diagrama-de-classes.png"/>
-
----
-
-### 3. Diagrama de Pacotes
-
-<img width="800px" src="https://github.com/eman134/trabalho-sistema-gestao-olimpiadas/blob/main/docs/diagrama-de-pacotes.png"/>
+<img width="800px" src="https://github.com/eman134/trabalho-sistema-gestao-olimpiadas/blob/main/docs/diagrama-de-classes-e-pacotes.png"/>
 
 ---
 
-### 4. Diagrama de Componentes
+### 3. Diagrama de Componentes
 
 <img width="800px" src="https://github.com/eman134/trabalho-sistema-gestao-olimpiadas/blob/main/docs/diagrama-de-componentes.png"/>
 
 ---
 
-### 5. Diagrama de Implantação
+### 4. Diagrama de Implantação
 
 <img width="800px" src="https://github.com/seunome/sistema-gestao-olimpiadas/blob/main/docs/diagrama-de-implantacao.png"/>
 
