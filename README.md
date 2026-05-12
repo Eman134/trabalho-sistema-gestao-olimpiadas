@@ -149,7 +149,7 @@ sistema-gestao-olimpiadas/
 
 ### 4. Diagrama de Implantação
 
-<img width="800px" src="https://github.com/seunome/sistema-gestao-olimpiadas/blob/main/docs/diagrama-de-implantacao.png"/>
+<img width="800px" src="https://github.com/eman134/trabalho-sistema-gestao-olimpiadas/blob/main/docs/diagrama-de-implantacao.png"/>
 
 ---
 
