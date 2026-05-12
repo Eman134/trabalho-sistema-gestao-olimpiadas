@@ -1,0 +1,128 @@
+@startuml
+
+left to right direction
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam actorStyle awesome
+skinparam shadowing false
+
+skinparam actor {
+    BackgroundColor #D6EAF8
+    BorderColor #2471A3
+    FontStyle bold
+    FontSize 12
+}
+
+skinparam usecase {
+    BackgroundColor #EBF5FB
+    BorderColor #2E86C1
+    FontSize 11
+    RoundCorner 10
+    ArrowColor #1F618D
+    ArrowFontSize 10
+}
+
+skinparam package {
+    BackgroundColor #F4F6F7
+    BorderColor #AEB6BF
+    FontStyle bold
+    FontSize 12
+}
+
+skinparam rectangle {
+    BackgroundColor #FDFEFE
+    BorderColor #2471A3
+    BorderThickness 2
+    FontStyle bold
+    FontSize 13
+}
+
+skinparam note {
+    BackgroundColor #FEF9E7
+    BorderColor #F39C12
+    FontSize 10
+}
+
+actor "Administrador" as Admin
+actor "Atleta"        as Atleta
+
+rectangle "SGO – Sistema de Gestão das Olimpíadas" {
+
+    package "Competições" {
+        usecase "Cadastrar Competição" as UC01
+        usecase "Editar Competição"    as UC02
+        usecase "Listar Competições"   as UC04
+    }
+
+    package "Inscrições" {
+        usecase "Inscrever Atleta"        as UC06
+        usecase "Cancelar Inscrição"      as UC07
+        usecase "Validar País/Modalidade" as UC09
+    }
+
+    package "Locais" {
+        usecase "Cadastrar Local"    as UC10
+        usecase "Alocar Local"       as UC11
+        usecase "Verificar Conflito" as UC12
+    }
+
+    package "Resultados" {
+        usecase "Registrar Resultado" as UC14
+        usecase "Homologar Resultado" as UC15
+        usecase "Consultar Resultado" as UC16
+    }
+
+    package "Relatórios" {
+        usecase "Gerar Relatório de Medalhas" as UC17
+        usecase "Exibir Quadro de Medalhas"   as UC18
+        usecase "Exportar Relatório"          as UC19
+    }
+
+}
+
+actor "Gestor de Locais" as Gestor
+actor "Árbitro"          as Arbitro
+actor "Público"          as Publico
+
+Admin   -down-> UC01
+Admin   -down-> UC02
+Admin   -down-> UC04
+Admin   -down-> UC10
+Admin   -down-> UC11
+Admin   -down-> UC15
+Admin   -down-> UC17
+
+Atleta  -down-> UC06
+Atleta  -down-> UC07
+Atleta  -down-> UC04
+
+Gestor  -up-> UC10
+Gestor  -up-> UC11
+
+Arbitro -up-> UC14
+Arbitro -up-> UC16
+
+Publico -up-> UC04
+Publico -up-> UC16
+Publico -up-> UC18
+
+UC06 ..> UC09 : <<include>>
+UC11 ..> UC12 : <<include>>
+UC14 ..> UC16 : <<include>>
+UC17 ..> UC18 : <<include>>
+UC17 ..> UC19 : <<extend>>
+UC15 ..> UC17 : <<extend>>
+
+note bottom of UC09
+  Atleta representa apenas
+  um país por modalidade.
+end note
+
+note bottom of UC12
+  Um local só pode abrigar
+  uma competição por vez.
+end note
+
+@enduml
