@@ -1,0 +1,191 @@
+@startuml
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam shadowing false
+
+skinparam node {
+    BackgroundColor #EBF5FB
+    BorderColor #2E86C1
+    FontStyle bold
+    FontSize 12
+}
+
+skinparam component {
+    BackgroundColor #D5F5E3
+    BorderColor #1E8449
+    FontSize 11
+}
+
+skinparam database {
+    BackgroundColor #FEF9E7
+    BorderColor #D4AC0D
+    FontSize 11
+}
+
+skinparam queue {
+    BackgroundColor #FDF2E9
+    BorderColor #E67E22
+    FontSize 11
+}
+
+skinparam interface {
+    BackgroundColor #FDFEFE
+    BorderColor #1A5276
+    FontSize 10
+}
+
+skinparam artifact {
+    BackgroundColor #F9EBEA
+    BorderColor #CB4335
+    FontSize 11
+}
+
+skinparam cloud {
+    BackgroundColor #EBF5FB
+    BorderColor #5DADE2
+}
+
+skinparam rectangle {
+    BorderColor #7F8C8D
+    BorderThickness 2
+    FontStyle bold
+    FontSize 12
+}
+
+title SGO – Diagrama de Implantação (AWS)
+
+node "Dispositivo do Usuário\n(Computador / Smartphone)" as ClientDevice {
+    component [Web Browser /\nMobile App] as ClientApp
+    interface "HTTPS :443" as IClient
+    ClientApp -down- IClient
+}
+
+cloud "Internet" as Internet
+
+rectangle "AWS Cloud" {
+
+    node "AWS EC2\n<<Load Balancer>>" as ALBNode {
+        component [Elastic Load\nBalancer] as ALB
+
+        interface "HTTPS :443" as IHTTPs_ALB
+        interface "HTTP  :8080" as IHTTP_ALB
+
+        ALB -up-   IHTTPs_ALB
+        ALB -down- IHTTP_ALB
+    }
+
+    node "AWS ECS Fargate\n<<Cluster de Contêineres>>" as ECSCluster {
+
+        component [Módulo de Competições\n<<Task>>]        as ModComp
+        component [Módulo de Inscrições\n<<Task>>]         as ModInsc
+        component [Módulo de Alocação\n<<Task>>]           as ModAloc
+        component [Módulo de Resultados\n<<Task>>]         as ModRes
+        component [Módulo de Relatórios\n<<Task>>]         as ModRel
+
+        interface "ICompeticaoService" as ICompSvc
+        interface "IInscricaoService"  as IInscSvc
+        interface "IAlocacaoService"   as IAlocSvc
+        interface "IResultadoService"  as IResSvc
+        interface "IRelatorioService"  as IRelSvc
+        interface "IJDBC"              as IJDBC
+        interface "ICache"             as ICacheConn
+        interface "IPublicarEvento"    as IPubEvento
+        interface "IFileStorage"       as IFileStorage
+
+        ModComp -up-    ICompSvc
+        ModInsc -up-    IInscSvc
+        ModAloc -up-    IAlocSvc
+        ModRes  -up-    IResSvc
+        ModRel  -up-    IRelSvc
+
+        ModComp -down-  IJDBC
+        ModInsc -down-  IJDBC
+        ModAloc -down-  IJDBC
+        ModRes  -down-  IJDBC
+        ModRel  -down-  IJDBC
+
+        ModComp -right- ICacheConn
+        ModInsc -right- ICacheConn
+        ModAloc -right- ICacheConn
+        ModRel  -right- ICacheConn
+
+        ModRes  -down-  IPubEvento
+        ModRel  -down-  IFileStorage
+    }
+
+    node "AWS RDS PostgreSQL\n<<Multi-AZ>>" as RDSNode {
+        database "RDS Primary\n(Escrita)"  as RDSPrimary
+        database "RDS Replica\n(Leitura)"  as RDSReplica
+
+        interface "TCP :5432 Primary" as IDB_Primary
+        interface "TCP :5432 Replica" as IDB_Replica
+
+        RDSPrimary -down-   IDB_Primary
+        RDSReplica -down-   IDB_Replica
+        RDSPrimary -right-> RDSReplica : <<replicação>>
+    }
+
+    node "AWS ElastiCache\n<<Redis>>" as CacheNode {
+        database "Redis Cluster" as Redis
+
+        interface "TCP :6379" as IRedis
+        Redis -down- IRedis
+    }
+
+    node "AWS SQS\n<<Filas de Mensagens>>" as SQSNode {
+        queue "Fila de Resultados" as FilaResultados
+        queue "Fila de Notificações" as FilaNotif
+
+        interface "IConsumirResultado" as IConsRes
+        interface "IConsumirNotif"     as IConsNotif
+
+        FilaResultados -down- IConsRes
+        FilaNotif      -down- IConsNotif
+    }
+
+    node "AWS SNS\n<<Tópico de Eventos>>" as SNSNode {
+        component [Tópico SGO] as TopicSNS
+
+        interface "ISNSPublish" as ISNSPub
+        TopicSNS -up- ISNSPub
+    }
+
+    node "AWS S3\n<<Armazenamento de Arquivos>>" as S3Node {
+        artifact "Relatórios PDF" as ArtPDF
+        artifact "Relatórios CSV" as ArtCSV
+
+        interface "IS3" as IS3
+        ArtPDF -up- IS3
+        ArtCSV -up- IS3
+    }
+
+    node "Serviço de\nNotificações\n(E-mail / SMS)" as NotifNode {
+        component [Notificador] as NotifSvc
+        interface "INotificacao" as INotif
+        NotifSvc -up- INotif
+    }
+}
+
+IClient       -down->  Internet      : HTTPS
+Internet      -down->  IHTTPs_ALB    : HTTPS
+IHTTP_ALB     -down->  ICompSvc      : roteia
+IHTTP_ALB     -down->  IInscSvc      : roteia
+IHTTP_ALB     -down->  IAlocSvc      : roteia
+IHTTP_ALB     -down->  IResSvc       : roteia
+IHTTP_ALB     -down->  IRelSvc       : roteia
+
+IJDBC         -down->  IDB_Primary   : escrita
+IJDBC         -down->  IDB_Replica   : leitura
+ICacheConn    -down->  IRedis        : cache
+
+IPubEvento    -down->  ISNSPub       : publica evento
+TopicSNS      -down->  FilaResultados : <<fan-out>>
+TopicSNS      -down->  FilaNotif      : <<fan-out>>
+IConsRes      -down->  ModRel         : consome resultado
+IConsNotif    -down->  INotif         : dispara notificação
+
+IFileStorage  -down->  IS3            : armazena arquivo
+
+@enduml
