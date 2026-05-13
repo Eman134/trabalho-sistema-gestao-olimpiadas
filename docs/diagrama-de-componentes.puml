@@ -1,0 +1,162 @@
+@startuml
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+skinparam component {
+    BackgroundColor #EBF5FB
+    BorderColor #2E86C1
+    FontSize 12
+    ArrowColor #1F618D
+}
+
+skinparam interface {
+    BackgroundColor #FDFEFE
+    BorderColor #1A5276
+}
+
+skinparam package {
+    BackgroundColor #F4F6F7
+    BorderColor #AEB6BF
+    FontStyle bold
+    FontSize 13
+}
+
+skinparam queue {
+    BackgroundColor #FDF2E9
+    BorderColor #E67E22
+    FontSize 11
+}
+
+skinparam database {
+    BackgroundColor #FEF9E7
+    BorderColor #D4AC0D
+    FontSize 11
+}
+
+title SGO – Diagrama de Componentes
+
+package "Interface de Usuário" {
+    component [Web App\n(Browser)] as WebApp
+    component [Mobile App]         as MobileApp
+}
+
+package "API Gateway / Load Balancer\n(AWS EC2)" {
+    component [Elastic Load Balancer] as Gateway
+
+    interface "IHTTPRequest"  as IHTTPReq
+    interface "IHTTPResponse" as IHTTPRes
+
+    WebApp    -down- IHTTPReq
+    MobileApp -down- IHTTPReq
+    IHTTPReq  -down- Gateway
+    Gateway   -down- IHTTPRes
+}
+
+package "Backend – Módulos de Negócio\n(AWS ECS Fargate)" {
+
+    component [Módulo de\nCompetições]        as ModComp
+    component [Módulo de\nInscrições]         as ModInsc
+    component [Módulo de\nAlocação de Locais] as ModAloc
+    component [Módulo de\nResultados]         as ModRes
+    component [Módulo de\nRelatórios]         as ModRel
+
+    interface "ICompeticaoService" as ICompSvc
+    interface "ICompeticaoData"    as ICompData
+
+    interface "IInscricaoService"  as IInscSvc
+    interface "IInscricaoData"     as IInscData
+    interface "IValidacaoPais"     as IValPais
+
+    interface "IAlocacaoService"   as IAlocSvc
+    interface "IAlocacaoData"      as IAlocData
+    interface "IConflito"          as IConflito
+
+    interface "IResultadoService"  as IResSvc
+    interface "IResultadoData"     as IResData
+    interface "IPublicarEvento"    as IPubEvento
+
+    interface "IRelatorioService"  as IRelSvc
+    interface "IRelatorioData"     as IRelData
+    interface "IExportacao"        as IExport
+
+    ModComp -up-    ICompSvc
+    ModComp -down-  ICompData
+
+    ModInsc -up-    IInscSvc
+    ModInsc -down-  IInscData
+    ModInsc -right- IValPais
+
+    ModAloc -up-    IAlocSvc
+    ModAloc -down-  IAlocData
+    ModAloc -right- IConflito
+
+    ModRes  -up-    IResSvc
+    ModRes  -down-  IResData
+    ModRes  -right- IPubEvento
+
+    ModRel  -up-    IRelSvc
+    ModRel  -down-  IRelData
+    ModRel  -right- IExport
+}
+
+package "Mensageria Assíncrona\n(AWS SQS / SNS)" {
+    component [Tópico de Eventos\n(AWS SNS)]    as TopicSNS
+    queue "Fila de Resultados\n(AWS SQS)"       as FilaResultados
+    queue "Fila de Notificações\n(AWS SQS)"     as FilaNotif
+    component [Serviço de\nNotificações]        as NotifSvc
+
+    interface "ISNSPublish"        as ISNSPub
+    interface "IConsumirResultado" as IConsRes
+    interface "IConsumirNotif"     as IConsNotif
+    interface "INotificacao"       as INotif
+
+    TopicSNS       -up-  ISNSPub
+    FilaResultados -up-  IConsRes
+    FilaNotif      -up-  IConsNotif
+    NotifSvc       -up-  INotif
+}
+
+package "Persistência e Armazenamento\n(AWS)" {
+    database "Banco de Dados\n(AWS RDS PostgreSQL)" as RDS
+    database "Cache\n(AWS ElastiCache – Redis)"     as Redis
+    component [Armazenamento\nde Arquivos\n(AWS S3)] as S3
+
+    interface "IPersistencia" as IPersist
+    interface "ICache"        as ICache
+    interface "IFileStorage"  as IFileStorage
+
+    RDS   -up- IPersist
+    Redis -up- ICache
+    S3    -up- IFileStorage
+}
+
+Gateway ..> ICompSvc : <<usa>>
+Gateway ..> IInscSvc : <<usa>>
+Gateway ..> IAlocSvc : <<usa>>
+Gateway ..> IResSvc  : <<usa>>
+Gateway ..> IRelSvc  : <<usa>>
+
+ICompData ..> IPersist : <<requer>>
+ICompData ..> ICache   : <<requer>>
+IInscData ..> IPersist : <<requer>>
+IInscData ..> ICache   : <<requer>>
+IAlocData ..> IPersist : <<requer>>
+IResData  ..> IPersist : <<requer>>
+IRelData  ..> IPersist : <<requer>>
+IRelData  ..> ICache   : <<requer>>
+
+IValPais  ..> ICache   : <<requer>>
+IConflito ..> ICache   : <<requer>>
+
+IPubEvento ..> ISNSPub        : <<publica>>
+TopicSNS   ..> FilaResultados : <<fan-out>>
+TopicSNS   ..> FilaNotif      : <<fan-out>>
+IConsRes   ..> ModRel         : <<consome>>
+IConsNotif ..> INotif         : <<dispara>>
+
+IExport ..> IFileStorage : <<requer>>
+
+@enduml
