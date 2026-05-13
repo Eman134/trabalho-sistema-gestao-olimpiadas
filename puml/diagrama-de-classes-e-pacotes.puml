@@ -1,0 +1,331 @@
+@startuml
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam linetype ortho
+
+skinparam class {
+    BackgroundColor #EBF5FB
+    BorderColor #2E86C1
+    HeaderBackgroundColor #2E86C1
+    HeaderFontColor #FFFFFF
+    FontSize 11
+    ArrowColor #1F618D
+}
+
+skinparam package {
+    BackgroundColor #F4F6F7
+    BorderColor #AEB6BF
+    FontStyle bold
+    FontSize 13
+}
+
+title SGO – Diagrama de Classes e Pacotes
+
+' ═══════════════════════════════════════════
+' PACOTE: controller
+' ═══════════════════════════════════════════
+package "controller" {
+
+    package "controller.competicao" {
+        class CompeticaoController {
+            + cadastrar(request: CompeticaoRequest): ResponseEntity
+            + editar(id: Long, request: CompeticaoRequest): ResponseEntity
+            + cancelar(id: Long): ResponseEntity
+            + listar(): ResponseEntity
+        }
+    }
+
+    package "controller.inscricao" {
+        class InscricaoController {
+            + inscrever(request: InscricaoRequest): ResponseEntity
+            + cancelar(id: Long): ResponseEntity
+            + listarPorAtleta(atletaId: Long): ResponseEntity
+        }
+    }
+
+    package "controller.local" {
+        class LocalController {
+            + cadastrar(request: LocalRequest): ResponseEntity
+            + alocar(request: AlocacaoRequest): ResponseEntity
+            + liberar(id: Long): ResponseEntity
+        }
+    }
+
+    package "controller.resultado" {
+        class ResultadoController {
+            + registrar(request: ResultadoRequest): ResponseEntity
+            + homologar(id: Long): ResponseEntity
+            + consultar(competicaoId: Long): ResponseEntity
+        }
+    }
+
+    package "controller.relatorio" {
+        class RelatorioController {
+            + gerarRelatorio(): ResponseEntity
+            + exportarPDF(): ResponseEntity
+            + exportarCSV(): ResponseEntity
+        }
+    }
+}
+
+' ═══════════════════════════════════════════
+' PACOTE: service
+' ═══════════════════════════════════════════
+package "service" {
+
+    package "service.competicao" {
+        class CompeticaoService {
+            + cadastrar(c: Competicao): void
+            + editar(c: Competicao): void
+            + cancelar(id: Long): void
+            + listar(): List<Competicao>
+        }
+    }
+
+    package "service.inscricao" {
+        class InscricaoService {
+            + inscrever(a: Atleta, c: Competicao): Inscricao
+            + cancelar(i: Inscricao): void
+            + validarPais(a: Atleta, c: Competicao): boolean
+        }
+    }
+
+    package "service.local" {
+        class LocalService {
+            + cadastrar(l: Local): void
+            + alocar(l: Local, c: Competicao): AlocacaoLocal
+            + verificarConflito(l: Local, dt: LocalDateTime): boolean
+            + liberar(a: AlocacaoLocal): void
+        }
+    }
+
+    package "service.resultado" {
+        class ResultadoService {
+            + registrar(r: Resultado): void
+            + homologar(id: Long): void
+            + consultar(id: Long): Resultado
+        }
+    }
+
+    package "service.relatorio" {
+        class RelatorioService {
+            + gerarRelatorio(): RelatorioMedalhas
+            + exportarPDF(): File
+            + exportarCSV(): File
+        }
+    }
+}
+
+' ═══════════════════════════════════════════
+' PACOTE: model
+' ═══════════════════════════════════════════
+package "model" {
+
+    package "model.competicao" {
+        class Competicao {
+            - id: Long
+            - nome: String
+            - modalidade: String
+            - data: LocalDate
+            - horario: LocalTime
+        }
+    }
+
+    package "model.atleta" {
+        class Atleta {
+            - id: Long
+            - nome: String
+            - dataNascimento: LocalDate
+        }
+
+        class Pais {
+            - id: Long
+            - nome: String
+            - sigla: String
+        }
+
+        class Inscricao {
+            - id: Long
+            - dataInscricao: LocalDate
+            - paisRepresentado: Pais
+            + validarPaisPorModalidade(): boolean
+        }
+    }
+
+    package "model.local" {
+        class Local {
+            - id: Long
+            - nome: String
+            - capacidade: Integer
+            - endereco: String
+        }
+
+        class AlocacaoLocal {
+            - id: Long
+            - dataInicio: LocalDateTime
+            - dataFim: LocalDateTime
+            + verificarConflito(): boolean
+        }
+    }
+
+    package "model.resultado" {
+        class Resultado {
+            - id: Long
+            - homologado: boolean
+            + registrar(): void
+            + homologar(): void
+        }
+
+        class Medalha {
+            - id: Long
+            - tipo: TipoMedalha
+        }
+
+        enum TipoMedalha {
+            OURO
+            PRATA
+            BRONZE
+        }
+    }
+
+    package "model.relatorio" {
+        class RelatorioMedalhas {
+            - id: Long
+            - dataGeracao: LocalDateTime
+            + gerar(): void
+            + exportarPDF(): File
+            + exportarCSV(): File
+        }
+    }
+}
+
+' ═══════════════════════════════════════════
+' PACOTE: repository
+' ═══════════════════════════════════════════
+package "repository" {
+
+    package "repository.competicao" {
+        interface CompeticaoRepository {
+            + findAll(): List<Competicao>
+            + findById(id: Long): Competicao
+            + save(c: Competicao): void
+            + delete(id: Long): void
+        }
+    }
+
+    package "repository.atleta" {
+        interface AtletaRepository {
+            + findAll(): List<Atleta>
+            + findById(id: Long): Atleta
+            + save(a: Atleta): void
+        }
+
+        interface InscricaoRepository {
+            + findByAtleta(a: Atleta): List<Inscricao>
+            + findByCompeticao(c: Competicao): List<Inscricao>
+            + save(i: Inscricao): void
+            + delete(id: Long): void
+        }
+    }
+
+    package "repository.local" {
+        interface LocalRepository {
+            + findAll(): List<Local>
+            + findById(id: Long): Local
+            + save(l: Local): void
+        }
+    }
+
+    package "repository.resultado" {
+        interface ResultadoRepository {
+            + findByCompeticao(c: Competicao): Resultado
+            + save(r: Resultado): void
+        }
+
+        interface MedalhaRepository {
+            + findByPais(p: Pais): List<Medalha>
+            + save(m: Medalha): void
+        }
+    }
+}
+
+' ═══════════════════════════════════════════
+' PACOTE: messaging
+' ═══════════════════════════════════════════
+package "messaging" {
+
+    package "messaging.publisher" {
+        class ResultadoEventPublisher {
+            + publicarResultado(r: Resultado): void
+        }
+    }
+
+    package "messaging.consumer" {
+        class ResultadoEventConsumer {
+            + consumir(evento: ResultadoEvent): void
+        }
+
+        class NotificacaoConsumer {
+            + consumir(evento: NotificacaoEvent): void
+        }
+    }
+}
+
+' ═══════════════════════════════════════════
+' RELAÇÕES: MODEL
+' ═══════════════════════════════════════════
+Competicao    "1"    --  "1"    Local             : realizada em >
+Competicao    "1"    --  "0..*" Inscricao         : possui >
+Inscricao     "0..*" --  "1"   Atleta             : pertence a >
+Inscricao     "0..*" --  "1"   Pais               : representa >
+Atleta        "0..*" --  "1"   Pais               : representa >
+AlocacaoLocal "0..*" --  "1"   Local              : referencia >
+AlocacaoLocal "1"    --  "1"   Competicao         : aloca >
+Resultado     "1"    --  "1"   Competicao         : registra >
+Resultado     "1"    --  "3"   Atleta             : classifica >
+Medalha       "0..*" --  "1"   Atleta             : concedida a >
+Medalha       "0..*" --  "1"   Pais               : contabilizada em >
+Medalha       "0..*" --  "1"   Competicao         : originada em >
+Medalha                --      TipoMedalha        : tipo >
+RelatorioMedalhas "1" -- "0..*" Medalha           : agrupa >
+
+' ═══════════════════════════════════════════
+' RELAÇÕES: CONTROLLER → SERVICE
+' ═══════════════════════════════════════════
+CompeticaoController ..> CompeticaoService : usa
+InscricaoController  ..> InscricaoService  : usa
+LocalController      ..> LocalService      : usa
+ResultadoController  ..> ResultadoService  : usa
+RelatorioController  ..> RelatorioService  : usa
+
+' ═══════════════════════════════════════════
+' RELAÇÕES: SERVICE → MODEL
+' ═══════════════════════════════════════════
+CompeticaoService ..> Competicao        : usa
+InscricaoService  ..> Inscricao         : usa
+InscricaoService  ..> Atleta            : usa
+LocalService      ..> Local             : usa
+LocalService      ..> AlocacaoLocal     : usa
+ResultadoService  ..> Resultado         : usa
+RelatorioService  ..> RelatorioMedalhas : usa
+
+' ═══════════════════════════════════════════
+' RELAÇÕES: SERVICE → REPOSITORY
+' ═══════════════════════════════════════════
+CompeticaoService ..> CompeticaoRepository : usa
+InscricaoService  ..> InscricaoRepository  : usa
+LocalService      ..> LocalRepository      : usa
+ResultadoService  ..> ResultadoRepository  : usa
+RelatorioService  ..> MedalhaRepository    : usa
+
+' ═══════════════════════════════════════════
+' RELAÇÕES: MESSAGING
+' ═══════════════════════════════════════════
+ResultadoService       ..> ResultadoEventPublisher : publica
+ResultadoEventConsumer ..> RelatorioService        : consome
+NotificacaoConsumer    ..> ResultadoService        : consome
+
+@enduml
